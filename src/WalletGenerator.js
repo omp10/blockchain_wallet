@@ -1,43 +1,44 @@
 import { useState } from "react";
-import {
-  JsonRpcProvider,
-  Wallet,
-  parseEther,
-  formatEther
-} from "ethers";
+import { ethers } from "ethers";
 
-// Update this to match Ganache's RPC URL (UI: 7545, CLI: 8545)
+// Ganache settings
 const GANACHE_RPC_URL = "http://127.0.0.1:7545";
-
-// Replace with a private key from Ganache (⚠️ keep private in real apps)
 const PRIVATE_KEY = "0xf7685985fb81c6ace2ced5322e34faa904df6e0192483c11599b6420592e70e9";
 
-export default function GanacheWallet() {
+export default function WalletGenerator() {
   const [balance, setBalance] = useState("");
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [txHash, setTxHash] = useState("");
 
   // Setup provider and wallet
-  const provider = new JsonRpcProvider(GANACHE_RPC_URL);
-  const wallet = new Wallet(PRIVATE_KEY, provider);
+  const provider = new ethers.providers.JsonRpcProvider(GANACHE_RPC_URL);
+  const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
   const getBalance = async () => {
-    const bal = await wallet.getBalance();
-    setBalance(formatEther(bal));
+    try {
+      const bal = await wallet.getBalance();
+      setBalance(ethers.utils.formatEther(bal));
+    } catch (error) {
+      console.error("Failed to fetch balance:", error);
+    }
   };
 
   const sendEth = async () => {
-    if (!recipient || !amount) return alert("Enter valid address and amount");
+    if (!recipient || !amount) {
+      alert("Please enter recipient and amount.");
+      return;
+    }
     try {
       const tx = await wallet.sendTransaction({
         to: recipient,
-        value: parseEther(amount),
+        value: ethers.utils.parseEther(amount),
       });
       await tx.wait();
       setTxHash(tx.hash);
       getBalance(); // refresh balance
     } catch (err) {
+      console.error("Transaction failed:", err);
       alert("Transaction Failed: " + err.message);
     }
   };
